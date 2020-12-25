@@ -36,11 +36,12 @@
 //!
 use serde::{Deserialize, Serialize};
 
+use crate::algorithm::neighbour::{KNNAlgorithm, KNNAlgorithmName};
 use crate::error::Failed;
 use crate::linalg::{row_iter, BaseVector, Matrix};
 use crate::math::distance::Distance;
 use crate::math::num::RealNumber;
-use crate::neighbors::{KNNAlgorithm, KNNAlgorithmName, KNNWeightFunction};
+use crate::neighbors::KNNWeightFunction;
 
 /// `KNNRegressor` parameters. Use `Default::default()` for default values.
 #[derive(Serialize, Deserialize, Debug)]
@@ -75,7 +76,7 @@ impl Default for KNNRegressorParameters {
 impl<T: RealNumber, D: Distance<Vec<T>, T>> PartialEq for KNNRegressor<T, D> {
     fn eq(&self, other: &Self) -> bool {
         if self.k != other.k || self.y.len() != other.y.len() {
-            return false;
+            false
         } else {
             for i in 0..self.y.len() {
                 if (self.y[i] - other.y[i]).abs() > T::epsilon() {
@@ -115,9 +116,9 @@ impl<T: RealNumber, D: Distance<Vec<T>, T>> KNNRegressor<T, D> {
             )));
         }
 
-        if parameters.k <= 1 {
+        if parameters.k < 1 {
             return Err(Failed::fit(&format!(
-                "k should be > 1, k=[{}]",
+                "k should be > 0, k=[{}]",
                 parameters.k
             )));
         }
@@ -150,10 +151,10 @@ impl<T: RealNumber, D: Distance<Vec<T>, T>> KNNRegressor<T, D> {
         let weights = self
             .weight
             .calc_weights(search_result.iter().map(|v| v.1).collect());
-        let w_sum = weights.iter().map(|w| *w).sum();
+        let w_sum = weights.iter().copied().sum();
 
         for (r, w) in search_result.iter().zip(weights.iter()) {
-            result = result + self.y[r.0] * (*w / w_sum);
+            result += self.y[r.0] * (*w / w_sum);
         }
 
         Ok(result)

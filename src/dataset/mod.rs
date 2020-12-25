@@ -5,6 +5,7 @@ pub mod boston;
 pub mod breast_cancer;
 pub mod diabetes;
 pub mod digits;
+pub mod generator;
 pub mod iris;
 
 use crate::math::num::RealNumber;
@@ -55,19 +56,19 @@ pub(crate) fn serialize_data<X: RealNumber, Y: RealNumber>(
 ) -> Result<(), io::Error> {
     match File::create(filename) {
         Ok(mut file) => {
-            file.write(&dataset.num_features.to_le_bytes())?;
-            file.write(&dataset.num_samples.to_le_bytes())?;
+            file.write_all(&dataset.num_features.to_le_bytes())?;
+            file.write_all(&dataset.num_samples.to_le_bytes())?;
             let x: Vec<u8> = dataset
                 .data
                 .iter()
-                .map(|v| *v)
+                .copied()
                 .flat_map(|f| f.to_f32_bits().to_le_bytes().to_vec().into_iter())
                 .collect();
             file.write_all(&x)?;
             let y: Vec<u8> = dataset
                 .target
                 .iter()
-                .map(|v| *v)
+                .copied()
                 .flat_map(|f| f.to_f32_bits().to_le_bytes().to_vec().into_iter())
                 .collect();
             file.write_all(&y)?;
@@ -82,7 +83,7 @@ pub(crate) fn deserialize_data(
 ) -> Result<(Vec<f32>, Vec<f32>, usize, usize), io::Error> {
     // read the same file back into a Vec of bytes
     let (num_samples, num_features) = {
-        let mut buffer = [0u8; 8];
+        let mut buffer = [0u8; 4];
         buffer.copy_from_slice(&bytes[0..8]);
         let num_features = usize::from_le_bytes(buffer);
         buffer.copy_from_slice(&bytes[8..16]);
