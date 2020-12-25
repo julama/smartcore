@@ -13,10 +13,10 @@ keywords = ["machine-learning", "statistical", "ai", "optimization", "linear-alg
 categories = ["science"]
 
 [features]
-default = ["datasets"]
+#default = ["datasets"]
 ndarray-bindings = ["ndarray"]
 nalgebra-bindings = ["nalgebra"]
-datasets = []
+#datasets = []
 
 [dependencies]
 ndarray = { version = "0.14", optional = true }
